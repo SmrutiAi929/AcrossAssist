@@ -42,3 +42,10 @@ export type ClientContentLog = {
   turns: Part[];
   turnComplete: boolean;
 };
+
+export type GuardrailResultType = {
+  status: "IN_PROGRESS" | "COMPLETE";
+  category: string;
+  rationale?: string;
+  testText?: string;
+};

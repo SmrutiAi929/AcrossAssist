@@ -16,7 +16,7 @@ export default function VoiceSelector() {
   useEffect(() => {
     const voiceName =
       config.speechConfig?.voiceConfig?.prebuiltVoiceConfig?.voiceName ||
-      "Atari02";
+      "Aoede";
     const voiceOption = { value: voiceName, label: voiceName };
     setSelectedOption(voiceOption);
   }, [config]);
@@ -24,7 +24,7 @@ export default function VoiceSelector() {
   const [selectedOption, setSelectedOption] = useState<{
     value: string;
     label: string;
-  } | null>(voiceOptions[5]);
+  } | null>(voiceOptions[4]);
 
   const updateConfig = useCallback(
     (voiceName: string) => {

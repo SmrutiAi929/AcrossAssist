@@ -1,0 +1,238 @@
+.transcript-container {
+  flex: 1;
+  width: 50%;
+  display: flex;
+  flex-direction: column;
+  background: white;
+  overflow: hidden;
+  border-right: 1px solid #E0E0E0;
+  border-radius: 12px;
+  min-height: 0;
+
+  .transcript-wrapper {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+  }
+
+  .transcript-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 24px;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background: white;
+    border-bottom: 1px solid #E5E7EB;
+    border-radius: 12px 12px 0 0;
+
+    .transcript-title {
+      font-size: 16px;
+      font-weight: 600;
+      color: #1F2937;
+    }
+
+    .transcript-header-actions {
+      display: flex;
+      gap: 8px;
+
+      .action-button {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 4px;
+        padding: 4px 12px;
+        border-radius: 6px;
+        background: #E5E7EB;
+        border: none;
+        cursor: pointer;
+        font-size: 14px;
+        color: #1F2937;
+        transition: background 0.2s;
+
+        &:hover {
+          background: #D1D5DB;
+        }
+
+        .material-symbols-outlined {
+          font-size: 16px;
+        }
+
+        &.copy-button {
+          width: 96px;
+        }
+
+        &.download-button {
+          width: 160px;
+        }
+      }
+    }
+  }
+
+  .transcript-content {
+    overflow: auto;
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    flex: 1;
+    height: 100%;
+
+    &.transcript-empty-state {
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+    }
+
+    .transcript-empty {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      padding: 48px 0;
+
+      h2 {
+        font-size: 30px;
+        font-weight: 800;
+        color: #1F2937;
+        margin: 0;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+      }
+
+      p {
+        font-size: 14px;
+        color: #6B7280;
+        margin: 0;
+        max-width: 384px;
+        line-height: 1.6;
+      }
+    }
+
+    .transcript-message {
+      display: flex;
+      flex-direction: column;
+      max-width: 512px;
+
+      &.message-user {
+        align-self: flex-end;
+        align-items: flex-end;
+      }
+
+      &.message-assistant {
+        align-self: flex-start;
+        align-items: flex-start;
+      }
+
+      .message-bubble {
+        padding: 12px;
+        border-radius: 12px;
+
+        .message-timestamp {
+          font-size: 12px;
+          font-family: monospace;
+          margin-bottom: 4px;
+
+          &.timestamp-user {
+            color: rgba(255, 255, 255, 0.6);
+          }
+
+          &.timestamp-assistant {
+            color: #6B7280;
+          }
+        }
+
+        .message-text {
+          white-space: pre-wrap;
+          word-wrap: break-word;
+
+          p {
+            margin: 0;
+          }
+
+          pre {
+            margin: 0;
+            font-size: 12px;
+            background: rgba(0, 0, 0, 0.05);
+            padding: 8px;
+            border-radius: 6px;
+            overflow-x: auto;
+          }
+        }
+      }
+
+      &.message-user .message-bubble {
+        background: #111827;
+        color: #F3F4F6;
+        border-radius: 12px 12px 0 12px;
+      }
+
+      &.message-assistant .message-bubble {
+        background: #F3F4F6;
+        color: #1F2937;
+        border-radius: 12px 12px 12px 0;
+      }
+    }
+  }
+
+  .transcript-input-area {
+    padding: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+    border-top: 1px solid #E5E7EB;
+    background: white;
+    border-radius: 0 0 12px 12px;
+
+    .transcript-input {
+      flex: 1;
+      padding: 8px 16px;
+      border: none;
+      outline: none;
+      font-size: 14px;
+      color: #1F2937;
+      background: transparent;
+
+      &::placeholder {
+        color: #9CA3AF;
+      }
+
+      &:disabled {
+        cursor: not-allowed;
+        opacity: 0.5;
+      }
+    }
+
+    .send-button {
+      background: #111827;
+      color: white;
+      border-radius: 9999px;
+      padding: 8px;
+      border: none;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: opacity 0.2s;
+      width: 40px;
+      height: 40px;
+
+      &:hover:not(:disabled) {
+        opacity: 0.9;
+      }
+
+      &:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+
+      .material-symbols-outlined {
+        font-size: 24px;
+      }
+    }
+  }
+}

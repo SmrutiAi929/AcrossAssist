@@ -1,0 +1,130 @@
+.hms-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 24px;
+  background: white;
+  border-bottom: 1px solid var(--border-gray-300);
+  
+  /* Match reference: p-5 py-3 equivalent */
+  @media (min-width: 768px) {
+    padding: 20px 24px;
+  }
+
+  .hms-header-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+
+    .hms-logo-img {
+      width: 80px;
+      height: auto;
+      margin-right: 12px;
+      object-fit: contain;
+    }
+
+    .hms-branding {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+
+      .voice-agent-title {
+        font-size: 14px;
+        font-weight: 500;
+        color: #4b5563;
+        margin: 0;
+        line-height: 1.2;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+      }
+
+      .hospital-name {
+        font-size: 18px;
+        font-weight: 600;
+        color: #1f2937;
+        margin: 0;
+        line-height: 1.2;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+      }
+    }
+  }
+
+  .hms-header-right {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+
+    .header-dropdowns {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-right: 8px;
+
+      .dropdown-label {
+        font-size: 14px;
+        font-weight: 500;
+        color: var(--foreground);
+        white-space: nowrap;
+      }
+
+      .dropdown-wrapper {
+        position: relative;
+        display: inline-block;
+
+        .header-select {
+          appearance: none;
+          padding: 6px 28px 6px 10px;
+          border: 1px solid var(--border-gray-300);
+          border-radius: 8px;
+          font-size: 14px;
+          font-weight: 400;
+          background: white;
+          color: var(--foreground);
+          cursor: pointer;
+          outline: none;
+          min-width: 100px;
+
+          &:focus {
+            border-color: var(--button-blue);
+          }
+
+          &::after {
+            content: "";
+            position: absolute;
+            right: 8px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 0;
+            height: 0;
+            border-left: 4px solid transparent;
+            border-right: 4px solid transparent;
+            border-top: 4px solid var(--gray-600);
+          }
+        }
+      }
+    }
+
+    .header-button {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 36px;
+      height: 36px;
+      border: 1px solid var(--border-gray-300);
+      border-radius: 8px;
+      background: white;
+      cursor: pointer;
+      transition: all 0.2s;
+
+      &:hover {
+        background: var(--gray-100);
+        border-color: var(--gray-400);
+      }
+
+      .material-symbols-outlined {
+        font-size: 20px;
+        color: var(--gray-700);
+      }
+    }
+  }
+}
+

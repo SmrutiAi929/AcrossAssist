@@ -1,0 +1,30 @@
+.main-content {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--background);
+  padding: 48px;
+
+  .hospital-branding {
+    text-align: center;
+
+    .hospital-title {
+      font-size: 48px;
+      font-weight: 700;
+      color: var(--foreground);
+      margin: 0 0 16px 0;
+      letter-spacing: 1.5px;
+      font-family: var(--font-family);
+    }
+
+    .hospital-subtitle {
+      font-size: 20px;
+      font-weight: 400;
+      color: var(--gray-600);
+      margin: 0;
+      font-family: var(--font-family);
+    }
+  }
+}
+
