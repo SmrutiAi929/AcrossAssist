@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import React, { useRef, useState, useEffect, useCallback, useMemo } from "react";
+import React, { useRef, useState, useEffect, useCallback, useMemo, createContext, useContext } from "react";
 import "./App.scss";
 import { LiveAPIProvider, useLiveAPIContext } from "./contexts/LiveAPIContext";
 import HMSHeader from "./components/hms-header/HMSHeader";
@@ -24,8 +24,32 @@ import BottomToolbar from "./components/bottom-toolbar/BottomToolbar";
 import ControlTray from "./components/control-tray/ControlTray";
 import cn from "classnames";
 import { LiveClientOptions } from "./types";
-import { Modality } from "@google/genai";
+import { Modality, FunctionDeclaration, Type } from "@google/genai";
 import { hmsDepartmentDirectory } from "./agents/sampleData";
+
+// Context for sharing appointment data
+export interface AppointmentData {
+  department: string | null;
+  doctor: string | null;
+  patientName: string | null;
+  mobileNumber: string | null;
+  appointmentDateTime: string | null;
+}
+
+interface AppointmentContextType {
+  appointmentData: AppointmentData;
+  setAppointmentData: React.Dispatch<React.SetStateAction<AppointmentData>>;
+}
+
+const AppointmentContext = createContext<AppointmentContextType | undefined>(undefined);
+
+export const useAppointmentData = () => {
+  const context = useContext(AppointmentContext);
+  if (!context) {
+    throw new Error("useAppointmentData must be used within AppointmentProvider");
+  }
+  return context;
+};
 
 const API_KEY = process.env.REACT_APP_GEMINI_API_KEY as string;
 if (typeof API_KEY !== "string") {
@@ -34,6 +58,38 @@ if (typeof API_KEY !== "string") {
 
 const apiOptions: LiveClientOptions = {
   apiKey: API_KEY,
+};
+
+// Function declaration for capturing appointment data
+const captureAppointmentDataTool: FunctionDeclaration = {
+  name: "capture_appointment_data",
+  description: "Captures and stores appointment booking details during the conversation. Call this function whenever you collect or confirm any appointment information from the patient.",
+  parameters: {
+    type: Type.OBJECT,
+    properties: {
+      department: {
+        type: Type.STRING,
+        description: "The medical department or specialty (e.g., 'Cardiology', 'Orthopedics', 'Neurology'). Only provide if mentioned or confirmed."
+      },
+      doctor: {
+        type: Type.STRING,
+        description: "The doctor's full name (e.g., 'Dr. Sarah Johnson'). Only provide if mentioned or confirmed."
+      },
+      patientName: {
+        type: Type.STRING,
+        description: "The full name of the patient. Only provide if mentioned or confirmed."
+      },
+      mobileNumber: {
+        type: Type.STRING,
+        description: "The patient's mobile phone number. Only provide if mentioned or confirmed."
+      },
+      appointmentDateTime: {
+        type: Type.STRING,
+        description: "The preferred appointment date and time (e.g., '25/11/2024 at 10 AM', 'Tomorrow morning', '2:00 PM'). Only provide if mentioned or confirmed."
+      }
+    },
+    required: []
+  }
 };
 
 type SessionStatus = "CONNECTED" | "DISCONNECTED" | "CONNECTING";
@@ -56,6 +112,15 @@ function AppContent() {
     return stored ? stored === 'true' : true;
   });
   const [codec, setCodec] = useState<string>("opus");
+  
+  // Appointment data state
+  const [appointmentData, setAppointmentData] = useState<AppointmentData>({
+    department: null,
+    doctor: null,
+    patientName: null,
+    mobileNumber: null,
+    appointmentDateTime: null,
+  });
 
   const { connected, connect, disconnect, client, model, config, setConfig, setModel } = useLiveAPIContext();
   const configInitialized = useRef<boolean>(false);
@@ -92,6 +157,9 @@ function AppContent() {
               },
             },
           },
+          tools: [
+            { functionDeclarations: [captureAppointmentDataTool] }
+          ],
           systemInstruction: {
             parts: [
               {
@@ -126,13 +194,24 @@ When a patient wants to book an outpatient consultation, you must collect and co
 
 5. **Preferred Appointment Date & Time:** Ask for their preferred date and time. If they only mention a date without time, clarify whether they prefer morning or evening. If they only mention morning/evening without specific time, suggest available time slots (e.g., 'Would 10 AM work for you?' or 'We have slots at 9 AM, 11 AM, or 2 PM. Which would you prefer?').
 
+**CRITICAL: Data Capture Tool Usage:**
+You have access to a function called 'capture_appointment_data'. You MUST call this function whenever you collect or confirm ANY appointment information from the patient:
+- Call it immediately after the patient mentions a department
+- Call it immediately after the patient selects or confirms a doctor
+- Call it immediately after the patient provides their name
+- Call it immediately after the patient provides their mobile number
+- Call it immediately after the patient mentions their preferred appointment date/time
+- Each time you call the function, include ALL the information you have collected so far, even if some fields were captured in previous calls
+
+Example: If the patient says "I need a cardiology appointment", immediately call capture_appointment_data with {department: "Cardiology"}. Then when they say "with Dr. Sarah Johnson", call it again with {department: "Cardiology", doctor: "Dr. Sarah Johnson"}.
+
 **Conversation Flow:**
-- When the patient mentions a department, acknowledge it naturally and proceed to ask about doctor preference. For example: "Great! I can help you book a Cardiology consultation. Which doctor would you prefer to see?"
-- When the patient provides their name, acknowledge it warmly. For example: "Thank you, John. May I have your mobile number to confirm your appointment?"
+- When the patient mentions a department, acknowledge it naturally, CALL capture_appointment_data immediately, and proceed to ask about doctor preference. For example: "Great! I can help you book a Cardiology consultation. Which doctor would you prefer to see?"
+- When the patient provides their name, acknowledge it warmly, CALL capture_appointment_data immediately, then ask: "Thank you, John. May I have your mobile number to confirm your appointment?"
 - Repeat back the details naturally to confirm accuracy as you collect them.
 - After collecting all details, provide a complete summary of the appointment for final confirmation before concluding.
 
-Be conversational, empathetic, and guide the patient smoothly through the booking process. Ensure all information is captured accurately.`,
+Be conversational, empathetic, and guide the patient smoothly through the booking process. Ensure all information is captured accurately by calling the capture_appointment_data function after each piece of information is provided.`,
               },
             ],
           },
@@ -171,6 +250,60 @@ Be conversational, empathetic, and guide the patient smoothly through the bookin
 
     return () => {
       client.off("setupcomplete", onSetupComplete);
+    };
+  }, [client]);
+
+  // Listen for tool calls to capture appointment data
+  useEffect(() => {
+    if (!client) return;
+
+    const onToolCall = (toolCall: any) => {
+      console.log("🔧 Tool call received:", toolCall);
+      
+      if (!toolCall.functionCalls) {
+        return;
+      }
+
+      const captureCall = toolCall.functionCalls.find(
+        (fc: any) => fc.name === "capture_appointment_data"
+      );
+
+      if (captureCall && captureCall.args) {
+        console.log("📊 Capturing appointment data:", captureCall.args);
+        
+        // Update appointment data with new information
+        setAppointmentData((prev) => ({
+          department: captureCall.args.department || prev.department,
+          doctor: captureCall.args.doctor || prev.doctor,
+          patientName: captureCall.args.patientName || prev.patientName,
+          mobileNumber: captureCall.args.mobileNumber || prev.mobileNumber,
+          appointmentDateTime: captureCall.args.appointmentDateTime || prev.appointmentDateTime,
+        }));
+      }
+
+      // Send response back to acknowledge the tool call
+      if (toolCall.functionCalls.length) {
+        setTimeout(() => {
+          client.sendToolResponse({
+            functionResponses: toolCall.functionCalls.map((fc: any) => ({
+              response: { 
+                output: { 
+                  success: true,
+                  message: "Data captured successfully"
+                } 
+              },
+              id: fc.id,
+              name: fc.name,
+            })),
+          });
+        }, 100);
+      }
+    };
+
+    client.on("toolcall", onToolCall);
+
+    return () => {
+      client.off("toolcall", onToolCall);
     };
   }, [client]);
 
@@ -248,22 +381,23 @@ Be conversational, empathetic, and guide the patient smoothly through the bookin
   }, []);
 
   return (
-    <div className="hms-app-layout">
-      {/* Header */}
-      <div className="hms-header-wrapper">
-        <HMSHeader
-          preferredLanguage={preferredLanguage}
-          onLanguageChange={setPreferredLanguage}
-          scenario={scenario}
-          onScenarioChange={setScenario}
-          agent={agent}
-          onAgentChange={setAgent}
-          agentOptions={[{ value: "hmsCareNavigator", label: "hmsCareNavigator" }]}
-        />
-      </div>
+    <AppointmentContext.Provider value={{ appointmentData, setAppointmentData }}>
+      <div className="hms-app-layout">
+        {/* Header */}
+        <div className="hms-header-wrapper">
+          <HMSHeader
+            preferredLanguage={preferredLanguage}
+            onLanguageChange={setPreferredLanguage}
+            scenario={scenario}
+            onScenarioChange={setScenario}
+            agent={agent}
+            onAgentChange={setAgent}
+            agentOptions={[{ value: "hmsCareNavigator", label: "hmsCareNavigator" }]}
+          />
+        </div>
 
-      {/* Main Content Area */}
-      <div className="hms-main-content">
+        {/* Main Content Area */}
+        <div className="hms-main-content">
         <Transcript
           userText={userText}
           setUserText={setUserText}
@@ -326,7 +460,8 @@ Be conversational, empathetic, and guide the patient smoothly through the bookin
           {/* Additional controls can go here */}
         </ControlTray>
       </div>
-    </div>
+      </div>
+    </AppointmentContext.Provider>
   );
 }
 

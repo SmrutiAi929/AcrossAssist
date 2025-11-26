@@ -28,10 +28,13 @@ export const hmsDepartmentDirectory: HmsDepartment[] = [
   {
     department: 'Orthopedics & Trauma Surgery',
     doctors: [
+      'Dr Ahmed Samy — Consultant Orthopedic Surgeon and Sports Medicine',
       'Dr Hani Eltair — Consultant Trauma & Orthopedic Surgeon',
       'Dr Jinwoo An — Consultant Orthopedic Surgeon',
       'Dr Mohamed Shawkat — Specialist Orthopedic Surgeon',
       'Dr Mohamed Kandil — Specialist Orthopedic Surgeon',
+      'Dr Bilal El Yafawi — Consultant Orthopedic Surgeon',
+      'Dr Waleed Mohammed — Specialist Orthopedic Surgeon',
     ],
   },
   {

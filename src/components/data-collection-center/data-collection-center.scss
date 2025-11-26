@@ -312,13 +312,13 @@
     .data-item {
       display: flex;
       justify-content: space-between;
-      align-items: center;
-      padding: 8px 0;
-      padding-bottom: 8px;
+      align-items: flex-start;
+      padding: 10px 0;
       background: transparent;
       border-bottom: 1px solid #F3F4F6;
       transform: scale(1);
       transform-origin: left center;
+      gap: 12px;
 
       &:last-child {
         border-bottom: none;
@@ -333,6 +333,8 @@
         color: #4B5563;
         font-weight: 500;
         transform: scale(1);
+        flex: 0 0 auto;
+        min-width: 150px;
 
         svg {
           width: 20px;
@@ -374,14 +376,17 @@
         align-items: center;
         gap: 8px;
         transform: scale(1);
+        flex-wrap: wrap;
+        justify-content: flex-end;
+        max-width: 200px;
 
         .data-item-value {
           font-size: 12px;
-          color: #6B7280;
-          max-width: 96px;
-          overflow: hidden;
-          text-overflow: ellipsis;
-          white-space: nowrap;
+          color: #1F2937;
+          font-weight: 600;
+          word-break: break-word;
+          text-align: right;
+          line-height: 1.4;
         }
       }
     }
