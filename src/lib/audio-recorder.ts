@@ -51,9 +51,23 @@ export class AudioRecorder extends EventEmitter {
     }
 
     this.starting = new Promise(async (resolve, reject) => {
-      this.stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      this.audioContext = await audioContext({ sampleRate: this.sampleRate });
-      this.source = this.audioContext.createMediaStreamSource(this.stream);
+      try {
+        this.stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        console.log("🎤 Microphone stream obtained, tracks:", this.stream.getAudioTracks().map(t => ({
+          label: t.label,
+          settings: t.getSettings()
+        })));
+        
+        this.audioContext = await audioContext({ sampleRate: this.sampleRate });
+        console.log("🔊 AudioContext created with sampleRate:", this.audioContext.sampleRate, "requested:", this.sampleRate);
+        
+        this.source = this.audioContext.createMediaStreamSource(this.stream);
+        console.log("✅ MediaStreamSource created successfully");
+      } catch (error) {
+        console.error("❌ Audio recorder setup error:", error);
+        reject(error);
+        return;
+      }
 
       const workletName = "audio-recorder-worklet";
       const src = createWorketFromSrc(workletName, AudioRecordingWorklet);

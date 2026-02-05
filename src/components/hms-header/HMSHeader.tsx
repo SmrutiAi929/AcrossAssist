@@ -25,8 +25,8 @@ const HMSHeader: React.FC<HMSHeaderProps> = ({
     <header className="hms-header">
       <div className="hms-header-left">
         <img 
-          src="/pragyaa-logo.svg" 
-          alt="Pragyaa.ai Logo" 
+          src="/omni.jpeg" 
+          alt="Omniscient FZ LLC Logo" 
           className="hms-logo-img"
           width={80}
           height={80}

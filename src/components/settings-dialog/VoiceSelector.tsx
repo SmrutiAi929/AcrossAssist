@@ -24,7 +24,7 @@ export default function VoiceSelector() {
   const [selectedOption, setSelectedOption] = useState<{
     value: string;
     label: string;
-  } | null>(voiceOptions[4]);
+  } | null>(voiceOptions[2]); // Default to Kore (index 2)
 
   const updateConfig = useCallback(
     (voiceName: string) => {
@@ -63,8 +63,8 @@ export default function VoiceSelector() {
             backgroundColor: isFocused
               ? "var(--Neutral-30)"
               : isSelected
-              ? "var(--Neutral-20)"
-              : undefined,
+                ? "var(--Neutral-20)"
+                : undefined,
           }),
         }}
         value={selectedOption}

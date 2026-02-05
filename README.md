@@ -384,7 +384,7 @@ server {
     location /_next/static {
         proxy_pass http://nextjs_upstream_hms;
         add_header Cache-Control "public, max-age=31536000, immutable";
-    }
+      }
 }
 ```
 

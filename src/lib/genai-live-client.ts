@@ -162,14 +162,20 @@ export class GenAILiveClient extends EventEmitter<LiveClientEventTypes> {
   }
 
   protected onerror(e: ErrorEvent) {
+    console.error("🔴 WebSocket error:", e);
     this.log("server.error", e.message);
     this.emit("error", e);
   }
 
   protected onclose(e: CloseEvent) {
+    console.log("🔴 WebSocket closed:", {
+      code: e.code,
+      reason: e.reason,
+      wasClean: e.wasClean
+    });
     this.log(
       `server.close`,
-      `disconnected ${e.reason ? `with reason: ${e.reason}` : ``}`
+      `disconnected ${e.reason ? `with reason: ${e.reason}` : ``} (code: ${e.code})`
     );
     this.emit("close", e);
   }
