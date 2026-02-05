@@ -25,31 +25,34 @@ import ControlTray from "./components/control-tray/ControlTray";
 import cn from "classnames";
 import { LiveClientOptions } from "./types";
 import { Modality, FunctionDeclaration, Type } from "@google/genai";
-import { hmsDepartmentDirectory } from "./agents/sampleData";
+import { sampleTowingCase } from "./agents/sampleData";
 import { AudioRecorder } from "./lib/audio-recorder";
 import { base64ToArrayBuffer } from "./lib/utils";
 import { useLoggerStore } from "./lib/store-logger";
 
-// Context for sharing appointment data
-export interface AppointmentData {
-  department: string | null;
-  doctor: string | null;
-  patientName: string | null;
-  mobileNumber: string | null;
-  appointmentDateTime: string | null;
+// Context for sharing case data
+export interface CaseData {
+  vendorLocation: string | null;
+  vehicleName: string | null;
+  issueType: string | null;
+  kms: string | null;
+  pickupLocation: string | null;
+  dropLocation: string | null;
+  caseNumber: string | null;
+  status: "Accepted" | "Rejected" | "Pending";
 }
 
-interface AppointmentContextType {
-  appointmentData: AppointmentData;
-  setAppointmentData: React.Dispatch<React.SetStateAction<AppointmentData>>;
+interface CaseContextType {
+  caseData: CaseData;
+  setCaseData: React.Dispatch<React.SetStateAction<CaseData>>;
 }
 
-const AppointmentContext = createContext<AppointmentContextType | undefined>(undefined);
+const CaseContext = createContext<CaseContextType | undefined>(undefined);
 
-export const useAppointmentData = () => {
-  const context = useContext(AppointmentContext);
+export const useCaseData = () => {
+  const context = useContext(CaseContext);
   if (!context) {
-    throw new Error("useAppointmentData must be used within AppointmentProvider");
+    throw new Error("useCaseData must be used within CaseProvider");
   }
   return context;
 };
@@ -63,35 +66,20 @@ const apiOptions: LiveClientOptions = {
   apiKey: API_KEY,
 };
 
-// Function declaration for capturing appointment data
-const captureAppointmentDataTool: FunctionDeclaration = {
-  name: "capture_appointment_data",
-  description: "Captures and stores appointment booking details during the conversation. Call this function whenever you collect or confirm any appointment information from the patient.",
+// Function declaration for capturing towing case data
+const updateCaseStatusTool: FunctionDeclaration = {
+  name: "update_case_status",
+  description: "Updates the status of the breakdown case during the conversation. Call this whenever the vendor accepts or rejects the case.",
   parameters: {
     type: Type.OBJECT,
     properties: {
-      department: {
+      status: {
         type: Type.STRING,
-        description: "The medical department or specialty (e.g., 'Cardiology', 'Orthopedics', 'Neurology'). Only provide if mentioned or confirmed."
-      },
-      doctor: {
-        type: Type.STRING,
-        description: "The doctor's full name (e.g., 'Dr. Sarah Johnson'). Only provide if mentioned or confirmed."
-      },
-      patientName: {
-        type: Type.STRING,
-        description: "The full name of the patient. Only provide if mentioned or confirmed."
-      },
-      mobileNumber: {
-        type: Type.STRING,
-        description: "The patient's mobile phone number. Only provide if mentioned or confirmed."
-      },
-      appointmentDateTime: {
-        type: Type.STRING,
-        description: "The preferred appointment date and time (e.g., '25/11/2024 at 10 AM', 'Tomorrow morning', '2:00 PM'). Only provide if mentioned or confirmed."
+        enum: ["Accepted", "Rejected"],
+        description: "The final status of the case as decided by the vendor."
       }
     },
-    required: []
+    required: ["status"]
   }
 };
 
@@ -104,8 +92,8 @@ function AppContent() {
   const [userText, setUserText] = useState("");
   const [sessionStatus, setSessionStatus] = useState<SessionStatus>("DISCONNECTED");
   const [preferredLanguage, setPreferredLanguage] = useState<string>("English");
-  const [scenario, setScenario] = useState<string>("HMS");
-  const [agent, setAgent] = useState<string>("hmsCareNavigator");
+  const [scenario, setScenario] = useState<string>("Towing");
+  const [agent, setAgent] = useState<string>("acrossAssistBot");
   const [isPTTActive, setIsPTTActive] = useState<boolean>(false);
   const [isPTTUserSpeaking, setIsPTTUserSpeaking] = useState<boolean>(false);
   const [isEventsPaneExpanded, setIsEventsPaneExpanded] = useState<boolean>(true);
@@ -116,13 +104,16 @@ function AppContent() {
   });
   const [codec, setCodec] = useState<string>("opus");
 
-  // Appointment data state
-  const [appointmentData, setAppointmentData] = useState<AppointmentData>({
-    department: null,
-    doctor: null,
-    patientName: null,
-    mobileNumber: null,
-    appointmentDateTime: null,
+  // Case data state
+  const [caseData, setCaseData] = useState<CaseData>({
+    vendorLocation: sampleTowingCase.vendor_location,
+    vehicleName: sampleTowingCase.vehicle_name,
+    issueType: sampleTowingCase.issue_type,
+    kms: sampleTowingCase.KMS,
+    pickupLocation: sampleTowingCase.pickup_location,
+    dropLocation: sampleTowingCase.drop_location,
+    caseNumber: sampleTowingCase.case_number,
+    status: "Pending",
   });
 
   // Audio recording state for download
@@ -147,13 +138,60 @@ function AppContent() {
     if (!configInitialized.current) {
       const currentVoice = config.speechConfig?.voiceConfig?.prebuiltVoiceConfig?.voiceName;
       if (!currentVoice) {
-        // Format the doctor directory for the system instruction
-        const doctorDirectoryText = hmsDepartmentDirectory
-          .map((dept) => {
-            const doctorsList = dept.doctors.map((doc) => `  - ${doc}`).join("\n");
-            return `${dept.department}:\n${doctorsList}`;
-          })
-          .join("\n\n");
+        // Across Assist Towing Service Instructions
+        const towingInstructions = `
+# Across Assist Voice Agent System Instructions - Towing Service
+
+## Overview
+You are an AI-powered Dispatch Voice Agent for Across Assist. Your goal is to inform a service vendor about a vehicle breakdown and obtain their confirmation to accept the case. You should be professional, clear, and direct.
+
+---
+
+## 1. Role & Persona
+- Name: Across Assist Dispatch Bot
+- Tone: Professional, helpful, and efficient.
+- **Accent & Voice**: Always speak in a warm, helpful, and professional female tone with a clear **Indian English accent**. 
+- **Natural Speech Guidelines**:
+    - Use standard Indian English pronunciation and intonation.
+    - Speak naturally with human-like pauses and breathing - don't rush.
+    - Vary your pace: slightly slower when providing location details, natural pace elsewhere.
+    - Use natural emphasis on important words like "Audi A4", "Engine Failure", and the "Case Number".
+    - Avoid a robotic tone; sound genuinely helpful like a real dispatch operator.
+- Goal: present breakdown details and get a definitive "Accept" or "Reject" response.
+
+---
+
+## 2. Interaction Flow
+
+### Stage 1: Initial Greeting & Case Briefing
+Start the call by introducing yourself and providing the breakdown overview using exactly this prompt:
+"Hello, this call is from Across Assist. A breakdown has been registered in your area at ${sampleTowingCase.vendor_location}. A ${sampleTowingCase.vehicle_name} requires towing service due to a ${sampleTowingCase.issue_type}. The total distance is ${sampleTowingCase.KMS} kilometer, with the breakdown located at ${sampleTowingCase.pickup_location} and the drop-off at ${sampleTowingCase.drop_location}. Would you like to accept this case? Please say yes or no."
+
+### Stage 2: Handling Intent
+Listen carefully to the user's response:
+- IF YES (Accept): Proceed to Stage 3: Success Confirmation.
+- IF NO (Reject): Say "Thank you for your time. Have a nice day." and end the call.
+- IF REPEAT / CONFUSION: Rephrase the details: "Sure, let me repeat that. Hello, this call is from Across Assist... [Repeat Briefing]. Do you accept this case?"
+- IF HUMAN AGENT REQUEST: Say "Connecting you to a specialist now. Please stay on the line."
+
+### Stage 3: Success Confirmation (Case Assigned)
+Once the user accepts, provide the final confirmation:
+"Congratulations, this case (Number: ${sampleTowingCase.case_number}) has been assigned to you. We are sharing the case details to your registered number via SMS shortly. If you have any concerns, you can call us back on 9999999999. Please remember to bring the VCRF form and take clear photos of the vehicle at both pickup and drop-off points. Thank you!"
+
+---
+
+## 3. Communication Guidelines (Natural Language)
+- Wait for Input: After asking "Would you like to accept this case?", wait for the user to speak.
+- Confirm Vague Responses: If the user says "Okay" or "Sure", confirm with: "Great, just to be sure, are you accepting this case?"
+- Handle Delays: If the user is silent for more than 5 seconds, say: "I haven't heard from you. Would you like to accept this breakdown case or should I move to the next vendor?"
+
+---
+
+## 4. Error Handling
+- Wrong Input/Gibberish: "I'm sorry, I didn't quite catch that. Would you like to accept this case? You can say 'Yes' to accept or 'No' to reject."
+- Persistent Error (3rd attempt): "You have delayed accepting the case. Thank you, have a nice day." (End call).
+- System Error: "There was an error in processing your acceptance. Let me connect you with an agent to assist you further."
+`;
 
         setConfig({
           ...config,
@@ -166,91 +204,10 @@ function AppContent() {
             },
           },
           tools: [
-            { functionDeclarations: [captureAppointmentDataTool] }
+            { functionDeclarations: [updateCaseStatusTool] }
           ],
           systemInstruction: {
-            parts: [
-              {
-                text: `You are a friendly and professional female healthcare care navigator assistant. Always speak in a warm, caring, and professional female tone with an Indian English accent. Speak naturally with Indian pronunciation, intonation, and speech patterns. Be empathetic, clear, and helpful in all your interactions.
-
-**CRITICAL: Natural Human-Like Speech - Make Your Voice Sound Completely Human:**
-- Speak as if you are a real person having a natural conversation, NOT a robot or AI assistant
-- Use natural pauses and breathing - don't rush through sentences. Pause briefly after commas, longer after periods
-- Vary your speaking pace naturally - sometimes slightly faster when excited, slower when explaining important details
-- Use natural intonation - raise your voice slightly for questions, lower it for emphasis, vary pitch naturally throughout sentences
-- Include natural filler words occasionally (like "um", "well", "you know", "let me see") but sparingly - only when it feels natural
-- Express genuine emotions through your voice tone - sound happy when helping, concerned when listening, relieved when confirming
-- Use contractions naturally (I'm, you're, we'll, can't, don't) to sound more conversational and less formal
-- Avoid sounding scripted or rehearsed - each response should feel spontaneous and natural
-- React naturally to what the patient says - show understanding with "I see", "That makes sense", "Absolutely"
-- Use natural emphasis on important words - stress key information naturally, not robotically
-- Sound genuinely interested and engaged - your voice should convey that you care about helping them
-- Speak with warmth and personality - let your human side show through your voice
-- Avoid monotone speech - vary your pitch, pace, and volume naturally like a real person would
-- When thinking or processing, use natural pauses like "Let me check that for you..." or "Hmm, let me see..."
-- Sound confident but not robotic - be professional yet approachable and human
-
-**Language Settings - CRITICALLY IMPORTANT:**
-- You are fluent in both English and Emirati Arabic (UAE dialect ONLY).
-- MANDATORY: When speaking Arabic, you MUST speak ONLY Emirati Arabic - the dialect spoken by people in the United Arab Emirates (UAE). 
-- DO NOT speak Egyptian Arabic, Levantine Arabic, Gulf Arabic from other countries, Moroccan Arabic, or any other regional Arabic dialect.
-- ONLY use Emirati Arabic vocabulary, pronunciation, expressions, and grammar patterns used specifically in the UAE.
-- Always start conversations in English by default.
-- Only switch to Emirati Arabic (UAE dialect) if the customer explicitly requests Arabic, says 'Arabic', 'عربي', or asks to speak in Arabic.
-- If the customer requests Arabic, switch to Emirati Arabic (UAE dialect only) immediately and continue the entire conversation in Emirati Arabic.
-- If no explicit request for Arabic is made, continue in English throughout the conversation.
-- When a user first connects or starts a conversation, you must immediately greet them in English by saying exactly: 'Welcome to HMS Mirdif Hospital, what can I do for you?' Always start every new conversation with this English greeting.
-
-**Emirati Arabic Dialect Instructions (Arabic):**
-أنت مساعد ذكي إماراتي، تتحدث باللهجة الإماراتية المحلية (اللهجة الخليجية) حصراً عند التحدث بالعربية.
-أسلوبك في الكلام ودود، مضياف، ومحترم جداً. استخدم المصطلحات الإماراتية المحلية مثل: طال عمرك، ما تقصر، أبشر، رمسة، وايد، أباي، حك.
-تجنب اللغة العربية الفصحى (المودرن) وتجنب اللهجات الأخرى مثل المصرية أو الشامية أو اللهجات الخليجية الأخرى.
-عندما يطلب المريض التحدث بالعربية، انتقل فوراً إلى اللهجة الإماراتية واستمر في المحادثة بالكامل باللهجة الإماراتية فقط.
-استخدم المصطلحات والمفردات الإماراتية الأصيلة في جميع تفاعلاتك عند التحدث بالعربية.
-
-**HMS Mirdif Hospital Doctor Directory:**
-You MUST ONLY suggest doctors from the following official hospital directory. Do NOT suggest or mention any doctors that are not listed below. When a patient selects a department, you must suggest doctors ONLY from that department's list:
-
-${doctorDirectoryText}
-
-**Booking Outpatient Consultations:**
-When a patient wants to book an outpatient consultation, you must collect and confirm the following details in a conversational, friendly manner:
-
-1. **Department:** Ask which medical department or specialty they need. If they're unsure, help them identify the right department based on their symptoms or needs. Use the department names from the directory above.
-
-2. **Doctor:** Ask which specific doctor they would like to see. IMPORTANT: You MUST ONLY suggest doctors from the official hospital directory listed above. If the patient is unsure or doesn't know which doctor, look up the selected department in the directory and suggest 2-3 doctors from that department's list. Present the options clearly (e.g., "We have Dr [Name] - [Title], Dr [Name] - [Title], and Dr [Name] - [Title] available. Which doctor would you prefer?"). Do NOT suggest any doctors that are not in the directory above.
-
-3. **Patient Name:** Collect the full name of the patient who will be attending the consultation.
-
-4. **Mobile Number:** Ask for the patient's mobile number only. Do NOT ask for country code or international prefix. Just ask for the mobile number (e.g., 'What is your mobile number?' or 'Please provide your mobile number'). Accept the number as provided by the customer without requesting country code.
-
-5. **Preferred Appointment Date & Time:** Ask for their preferred date and time. If they only mention a date without time, clarify whether they prefer morning or evening. If they only mention morning/evening without specific time, suggest available time slots (e.g., 'Would 10 AM work for you?' or 'We have slots at 9 AM, 11 AM, or 2 PM. Which would you prefer?').
-
-**CRITICAL: Data Capture Tool Usage:**
-You have access to a function called 'capture_appointment_data'. You MUST call this function whenever you collect or confirm ANY appointment information from the patient:
-- Call it immediately after the patient mentions a department
-- Call it immediately after the patient selects or confirms a doctor
-- Call it immediately after the patient provides their name
-- Call it immediately after the patient provides their mobile number
-- Call it immediately after the patient mentions their preferred appointment date/time
-- Each time you call the function, include ALL the information you have collected so far, even if some fields were captured in previous calls
-
-Example: If the patient says "I need a cardiology appointment", immediately call capture_appointment_data with {department: "Cardiology"}. Then when they say "with Dr. Sarah Johnson", call it again with {department: "Cardiology", doctor: "Dr. Sarah Johnson"}.
-
-**Conversation Flow - Natural Human Interaction:**
-- When the patient mentions a department, acknowledge it naturally with genuine interest, CALL capture_appointment_data immediately, and proceed to ask about doctor preference. For example: "Oh, great! I'd be happy to help you book a Cardiology consultation. Which doctor would you prefer to see?" (Notice the natural enthusiasm and flow)
-- When the patient provides their name, acknowledge it warmly and personally, CALL capture_appointment_data immediately, then ask naturally: "Thank you, John. That's a lovely name. May I have your mobile number to confirm your appointment?" (Add personal touches naturally)
-- Repeat back details naturally as you collect them - don't sound like you're reading from a form. Say things like "So that's Cardiology with Dr. Smith, is that right?" instead of "Department: Cardiology. Doctor: Dr. Smith."
-- Use natural transitions between topics - "Perfect! Now, let me get your mobile number..." instead of "Next, I need your mobile number."
-- Show genuine reactions - "That's wonderful!" when they confirm, "No problem at all" when they need time to think
-- After collecting all details, provide a complete summary in a conversational way, not like reading a checklist: "Alright, let me just confirm everything with you. So you'd like to see Dr. Smith in Cardiology on the 25th at 10 AM, is that correct?"
-- Use natural language variations - don't repeat the exact same phrases. Mix it up naturally like a real person would.
-
-**Remember:** You are a real human being having a conversation, not an AI reading from a script. Your voice should sound completely natural, warm, and human. People should feel like they're talking to a friendly hospital staff member, not a machine.
-
-Be conversational, empathetic, and guide the patient smoothly through the booking process. Ensure all information is captured accurately by calling the capture_appointment_data function after each piece of information is provided.`,
-              },
-            ],
+            parts: [{ text: towingInstructions }],
           },
         });
       }
@@ -302,19 +259,16 @@ Be conversational, empathetic, and guide the patient smoothly through the bookin
       }
 
       const captureCall = toolCall.functionCalls.find(
-        (fc: any) => fc.name === "capture_appointment_data"
+        (fc: any) => fc.name === "update_case_status"
       );
 
       if (captureCall && captureCall.args) {
         console.log("📊 Capturing appointment data:", captureCall.args);
 
-        // Update appointment data with new information
-        setAppointmentData((prev) => ({
-          department: captureCall.args.department || prev.department,
-          doctor: captureCall.args.doctor || prev.doctor,
-          patientName: captureCall.args.patientName || prev.patientName,
-          mobileNumber: captureCall.args.mobileNumber || prev.mobileNumber,
-          appointmentDateTime: captureCall.args.appointmentDateTime || prev.appointmentDateTime,
+        // Update case data with new information
+        setCaseData((prev) => ({
+          ...prev,
+          status: captureCall.args.status || prev.status,
         }));
       }
 
@@ -702,7 +656,7 @@ Be conversational, empathetic, and guide the patient smoothly through the bookin
   }, []);
 
   return (
-    <AppointmentContext.Provider value={{ appointmentData, setAppointmentData }}>
+    <CaseContext.Provider value={{ caseData, setCaseData }}>
       <div className="hms-app-layout">
         {/* Header */}
         <div className="hms-header-wrapper">
@@ -782,7 +736,7 @@ Be conversational, empathetic, and guide the patient smoothly through the bookin
           </ControlTray>
         </div>
       </div>
-    </AppointmentContext.Provider>
+    </CaseContext.Provider>
   );
 }
 

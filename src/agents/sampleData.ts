@@ -7,6 +7,7 @@ export interface HmsDepartment {
   doctors: string[];
 }
 
+/*
 export const hmsDepartmentDirectory: HmsDepartment[] = [
   {
     department: 'Cardiology',
@@ -203,4 +204,25 @@ export const hmsDepartmentDirectory: HmsDepartment[] = [
     ],
   },
 ];
+*/
 
+
+export interface TowingCaseData {
+  vendor_location: string;
+  vehicle_name: string;
+  issue_type: string;
+  KMS: string;
+  pickup_location: string;
+  drop_location: string;
+  case_number: string;
+}
+
+export const sampleTowingCase: TowingCaseData = {
+  vendor_location: "Sector 62, Noida",
+  vehicle_name: "Audi A4",
+  issue_type: "Engine Failure",
+  KMS: "15",
+  pickup_location: "Maple Tower, Sector 62, Noida",
+  drop_location: "Audi Service Center, Okhla Phase 3",
+  case_number: "AA-9988-22",
+};

@@ -1,11 +1,11 @@
 #!/bin/bash
 
-# Setup script for beeidea.pragyaa.ai on port 3002
+# Setup script for beeidea.pragyaa.ai on port 3009
 # This script sets up nginx configuration and SSL certificate
 
 set -e
 
-echo "Setting up beeidea.pragyaa.ai on port 3002..."
+echo "Setting up beeidea.pragyaa.ai on port 3009..."
 
 # Step 1: Copy nginx configuration
 echo "Step 1: Creating nginx configuration file..."

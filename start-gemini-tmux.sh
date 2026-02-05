@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Start Gemini HMS application in tmux session
-# This script creates or attaches to a tmux session running the app on port 3002
+# This script creates or attaches to a tmux session running the app on port 3009
 
 SESSION_NAME="gemini-hms"
 APP_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -14,7 +14,7 @@ if tmux has-session -t "$SESSION_NAME" 2>/dev/null; then
     tmux attach-session -t "$SESSION_NAME"
 else
     echo "Creating new tmux session '$SESSION_NAME'..."
-    echo "Starting Gemini HMS application on port 3002..."
+    echo "Starting Gemini HMS application on port 3009..."
     echo ""
     echo "To detach from tmux: Press Ctrl+B, then D"
     echo "To reattach later: tmux attach-session -t $SESSION_NAME"

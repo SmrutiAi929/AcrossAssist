@@ -59,7 +59,7 @@ const Transcript: React.FC<TranscriptProps> = ({
         {/* Header */}
         <div className="transcript-header">
           <span className="transcript-title">
-            {shouldRenderTranscript ? "Transcript" : "HMS Mirdif Hospital"}
+            {shouldRenderTranscript ? "Transcript" : "ACROSS ASSIST"}
           </span>
           <div className="transcript-header-actions">
             <button
@@ -89,8 +89,8 @@ const Transcript: React.FC<TranscriptProps> = ({
           {!shouldRenderTranscript ? (
             /* Show Hospital Branding when transcript is disabled */
             <div className="transcript-empty">
-              <h2>HMS Mirdif Hospital</h2>
-              <p>Multispeciality care in the heart of Dubai.</p>
+              <h2>ACROSS ASSIST</h2>
+              <p>Your reliable breakdown and towing partner.</p>
             </div>
           ) : conversationLogs.length > 0 ? (
             conversationLogs.map((log, index) => {

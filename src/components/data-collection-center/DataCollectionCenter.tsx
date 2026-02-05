@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useLiveAPIContext } from "../../contexts/LiveAPIContext";
-import { useAppointmentData } from "../../App";
+import { useCaseData } from "../../App";
 import cn from "classnames";
 import "./data-collection-center.scss";
 import { FiDownload, FiHome, FiUser, FiPhone, FiCalendar, FiShare2, FiClock, FiFileText } from "react-icons/fi";
@@ -15,7 +15,7 @@ interface DataItem {
 
 const DataCollectionCenter: React.FC = () => {
   const { connected } = useLiveAPIContext();
-  const { appointmentData } = useAppointmentData();
+  const { caseData } = useCaseData();
   const [sessionStartTime, setSessionStartTime] = useState<number | null>(null);
   const [callDuration, setCallDuration] = useState<string>("0:00");
 
@@ -47,40 +47,54 @@ const DataCollectionCenter: React.FC = () => {
 
   // Create data items with actual collected data
   const dataItems: DataItem[] = [
-    { 
-      id: "1", 
-      label: "Department", 
-      icon: <FiHome />, 
-      status: appointmentData.department ? "Collected" : "Pending",
-      value: appointmentData.department
+    {
+      id: "1",
+      label: "Vendor Location",
+      icon: <FiHome />,
+      status: caseData.vendorLocation ? "Collected" : "Pending",
+      value: caseData.vendorLocation
     },
-    { 
-      id: "2", 
-      label: "Doctor", 
-      icon: <FiUser />, 
-      status: appointmentData.doctor ? "Collected" : "Pending",
-      value: appointmentData.doctor
+    {
+      id: "2",
+      label: "Vehicle Name",
+      icon: <FiUser />,
+      status: caseData.vehicleName ? "Collected" : "Pending",
+      value: caseData.vehicleName
     },
-    { 
-      id: "3", 
-      label: "Patient Name", 
-      icon: <FiUser />, 
-      status: appointmentData.patientName ? "Collected" : "Pending",
-      value: appointmentData.patientName
+    {
+      id: "3",
+      label: "Issue Type",
+      icon: <FiFileText />,
+      status: caseData.issueType ? "Collected" : "Pending",
+      value: caseData.issueType
     },
-    { 
-      id: "4", 
-      label: "Mobile Number", 
-      icon: <FiPhone />, 
-      status: appointmentData.mobileNumber ? "Collected" : "Pending",
-      value: appointmentData.mobileNumber
+    {
+      id: "4",
+      label: "Distance (KMS)",
+      icon: <FiShare2 />,
+      status: caseData.kms ? "Collected" : "Pending",
+      value: caseData.kms
     },
-    { 
-      id: "5", 
-      label: "Appointment Date & Time", 
-      icon: <FiCalendar />, 
-      status: appointmentData.appointmentDateTime ? "Collected" : "Pending",
-      value: appointmentData.appointmentDateTime
+    {
+      id: "5",
+      label: "Pickup Location",
+      icon: <FiHome />,
+      status: caseData.pickupLocation ? "Collected" : "Pending",
+      value: caseData.pickupLocation
+    },
+    {
+      id: "6",
+      label: "Drop Location",
+      icon: <FiShare2 />,
+      status: caseData.dropLocation ? "Collected" : "Pending",
+      value: caseData.dropLocation
+    },
+    {
+      id: "7",
+      label: "Case Status",
+      icon: <FiFileText />,
+      status: caseData.status !== "Pending" ? "Collected" : "Pending",
+      value: caseData.status
     },
   ];
 
@@ -90,17 +104,17 @@ const DataCollectionCenter: React.FC = () => {
   // Download captured data as JSON
   const handleDownload = () => {
     const dataToDownload = {
-      ...appointmentData,
+      ...caseData,
       capturedAt: new Date().toISOString(),
       completionPercentage: `${completionPercentage}%`,
       callDuration: callDuration,
     };
-    
+
     const blob = new Blob([JSON.stringify(dataToDownload, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `appointment-data-${Date.now()}.json`;
+    a.download = `towing-case-data-${Date.now()}.json`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -114,7 +128,7 @@ const DataCollectionCenter: React.FC = () => {
         <div className="dc-header-content">
           <div className="dc-header-text">
             <h2>Data Collection Center</h2>
-            <p>Hospital Appointment Desk</p>
+            <p>Across Assist Dispatch Desk</p>
           </div>
           <div className={cn("collecting-indicator", { active: connected })}>
             <div className="indicator-dot"></div>
@@ -130,8 +144,8 @@ const DataCollectionCenter: React.FC = () => {
           <div className="agent-header">
             <FiUser className="agent-icon" />
             <div className="agent-info">
-              <h3>hms Care Navigator</h3>
-              <p>Coordinating hospital appointments and patient queries.</p>
+              <h3>Across Assist Dispatch Bot</h3>
+              <p>Informing vendors about breakdown cases and tracking acceptance.</p>
             </div>
             <div className={cn("agent-status", { active: connected })}>
               <span className="status-label">STATUS</span>
@@ -147,8 +161,8 @@ const DataCollectionCenter: React.FC = () => {
               <FiHome className="section-icon" />
               Data Collection Progress
             </h3>
-            <button 
-              className="download-button-inline" 
+            <button
+              className="download-button-inline"
               disabled={capturedCount === 0}
               onClick={handleDownload}
             >
@@ -156,15 +170,15 @@ const DataCollectionCenter: React.FC = () => {
               Download ({capturedCount})
             </button>
           </div>
-          
+
           {/* Progress Bar */}
           <div className="progress-bar-container">
-            <div 
+            <div
               className="progress-bar-fill"
               style={{ width: `${completionPercentage}%` }}
             ></div>
           </div>
-          
+
           <div className="data-items-list">
             {dataItems.map((item) => (
               <div key={item.id} className="data-item">
@@ -214,7 +228,7 @@ const DataCollectionCenter: React.FC = () => {
             <div className="metric-item">
               <FiFileText className="metric-icon" />
               <div className="metric-label">
-                <span className="metric-name">Appointment Completion</span>
+                <span className="metric-name">Case Detail Capture</span>
                 <span className="metric-value">{capturedCount}/{dataItems.length} ({completionPercentage}%)</span>
               </div>
             </div>

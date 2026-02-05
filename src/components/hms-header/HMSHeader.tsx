@@ -24,20 +24,20 @@ const HMSHeader: React.FC<HMSHeaderProps> = ({
   return (
     <header className="hms-header">
       <div className="hms-header-left">
-        <img 
-          src="/omni.jpeg" 
-          alt="Omniscient FZ LLC Logo" 
+        <img
+          src="/pragyaa-logo.svg"
+          alt="Across Assist Logo"
           className="hms-logo-img"
           width={80}
           height={80}
         />
         <div className="hms-branding">
           <h1 className="voice-agent-title">VoiceAgent 2.0</h1>
-          <h2 className="hospital-name">HMS Mirdif Hospital</h2>
+          <h2 className="hospital-name">ACROSS ASSIST</h2>
         </div>
       </div>
       <div className="hms-header-right">
-        <div className="header-dropdowns" style={{ display: 'none' }}>
+        <div className="header-dropdowns">
           <label className="dropdown-label">
             Language
           </label>
@@ -62,7 +62,7 @@ const HMSHeader: React.FC<HMSHeaderProps> = ({
               onChange={(e) => onScenarioChange(e.target.value)}
               className="header-select"
             >
-              <option value="HMS">HMS</option>
+              <option value="Towing">Across Assist Towing</option>
             </select>
           </div>
 
