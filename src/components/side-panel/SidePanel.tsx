@@ -92,7 +92,7 @@ export default function SidePanel() {
           className="react-select"
           classNamePrefix="react-select"
           styles={{
-            control: (baseStyles) => ({
+            control: (baseStyles: any) => ({
               ...baseStyles,
               background: "var(--Neutral-15)",
               color: "var(--Neutral-90)",
@@ -100,7 +100,7 @@ export default function SidePanel() {
               maxHeight: "33px",
               border: 0,
             }),
-            option: (styles, { isFocused, isSelected }) => ({
+            option: (styles: any, { isFocused, isSelected }: any) => ({
               ...styles,
               backgroundColor: isFocused
                 ? "var(--Neutral-30)"
@@ -111,7 +111,7 @@ export default function SidePanel() {
           }}
           defaultValue={selectedOption}
           options={filterOptions}
-          onChange={(e) => {
+          onChange={(e: any) => {
             setSelectedOption(e);
           }}
         />

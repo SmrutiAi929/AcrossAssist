@@ -50,7 +50,7 @@ export default function VoiceSelector() {
         className="react-select"
         classNamePrefix="react-select"
         styles={{
-          control: (baseStyles) => ({
+          control: (baseStyles: any) => ({
             ...baseStyles,
             background: "var(--Neutral-15)",
             color: "var(--Neutral-90)",
@@ -58,7 +58,7 @@ export default function VoiceSelector() {
             maxHeight: "33px",
             border: 0,
           }),
-          option: (styles, { isFocused, isSelected }) => ({
+          option: (styles: any, { isFocused, isSelected }: any) => ({
             ...styles,
             backgroundColor: isFocused
               ? "var(--Neutral-30)"
@@ -70,7 +70,7 @@ export default function VoiceSelector() {
         value={selectedOption}
         defaultValue={selectedOption}
         options={voiceOptions}
-        onChange={(e) => {
+        onChange={(e: any) => {
           setSelectedOption(e);
           if (e) {
             updateConfig(e.value);
